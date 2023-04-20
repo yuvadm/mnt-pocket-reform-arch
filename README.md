@@ -2,6 +2,8 @@
 
 Arch Linux packages for the [MNT Pocket Reform](https://www.crowdsupply.com/mnt/pocket-reform).
 
+![https://www.notebookcheck.nl/fileadmin/Notebooks/News/_nc3/mnt_pocket_reform_20220622.jpg](https://www.notebookcheck.nl/fileadmin/Notebooks/News/_nc3/mnt_pocket_reform_20220622.jpg)
+
 ## References
 
 ### Arch Linux
