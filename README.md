@@ -1,2 +1,3 @@
-# mnt-reform-pocket-arch
-Arch Linux packages for the MNT Reform Pocket
+# MNT Pocket Reform Arch
+
+Arch Linux packages for the [MNT Pocket Reform](https://www.crowdsupply.com/mnt/pocket-reform).
