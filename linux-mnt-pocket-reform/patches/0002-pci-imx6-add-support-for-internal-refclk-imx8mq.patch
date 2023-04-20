@@ -1,0 +1,95 @@
+From 01951ef9d3d9d52640feaf8272c0fea75703bff1 Mon Sep 17 00:00:00 2001
+From: "Lukas F. Hartmann" <lukas@mntre.com>
+Date: Sat, 22 Oct 2022 17:11:19 +0200
+Subject: [PATCH 2/6] pci-imx6-add-support-for-internal-refclk-imx8mq
+
+---
+ drivers/pci/controller/dwc/pci-imx6.c | 44 +++++++++++++++++++++++++--
+ 1 file changed, 42 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/pci/controller/dwc/pci-imx6.c b/drivers/pci/controller/dwc/pci-imx6.c
+index 1dde5c5..58d9591 100644
+--- a/drivers/pci/controller/dwc/pci-imx6.c
++++ b/drivers/pci/controller/dwc/pci-imx6.c
+@@ -69,6 +69,7 @@ struct imx6_pcie {
+ 	struct dw_pcie		*pci;
+ 	int			reset_gpio;
+ 	bool			gpio_active_high;
++	bool			internal_refclk;
+ 	bool			link_is_up;
+ 	struct clk		*pcie_bus;
+ 	struct clk		*pcie_phy;
+@@ -157,6 +158,40 @@ static unsigned int imx6_pcie_grp_offset(const struct imx6_pcie *imx6_pcie)
+ 	return imx6_pcie->controller_id == 1 ? IOMUXC_GPR16 : IOMUXC_GPR14;
+ }
+ 
++#define IMX8MQ_ANA_PLLOUT_REG			0x74
++#define IMX8MQ_ANA_PLLOUT_CKE			BIT(4)
++#define IMX8MQ_ANA_PLLOUT_SEL_MASK		0xF
++#define IMX8MQ_ANA_PLLOUT_SEL_SYSPLL1		0xB
++#define IMX8MQ_ANA_PLLOUT_DIV_REG		0x7C
++#define IMX8MQ_ANA_PLLOUT_SYSPLL1_DIV		0x7
++
++static void imx6_pcie_enable_internal_refclk(void)
++{
++	uint32_t val;
++	struct device_node* np;
++	void __iomem *base;
++
++	np = of_find_compatible_node(NULL, NULL,
++				"fsl,imx8mq-anatop");
++	base = of_iomap(np, 0);
++	WARN_ON(!base);
++
++	val = readl(base + IMX8MQ_ANA_PLLOUT_REG);
++	val &= ~IMX8MQ_ANA_PLLOUT_SEL_MASK;
++	val |= IMX8MQ_ANA_PLLOUT_SEL_SYSPLL1;
++	writel(val, base + IMX8MQ_ANA_PLLOUT_REG);
++	/* SYS_PLL1 is 800M, PCIE REF CLK is 100M */
++	val = readl(base + IMX8MQ_ANA_PLLOUT_DIV_REG);
++	val |= IMX8MQ_ANA_PLLOUT_SYSPLL1_DIV;
++	writel(val, base + IMX8MQ_ANA_PLLOUT_DIV_REG);
++
++	val = readl(base + IMX8MQ_ANA_PLLOUT_REG);
++	val |= IMX8MQ_ANA_PLLOUT_CKE;
++	writel(val, base + IMX8MQ_ANA_PLLOUT_REG);
++
++	usleep_range(9000,10000);
++}
++
+ static void imx6_pcie_configure_type(struct imx6_pcie *imx6_pcie)
+ {
+ 	unsigned int mask, val;
+@@ -302,6 +337,9 @@ static int pcie_phy_write(struct imx6_pcie *imx6_pcie, int addr, u16 data)
+ 
+ static void imx6_pcie_init_phy(struct imx6_pcie *imx6_pcie)
+ {
++	if (imx6_pcie->internal_refclk)
++		imx6_pcie_enable_internal_refclk();
++
+ 	switch (imx6_pcie->drvdata->variant) {
+ 	case IMX8MM:
+ 	case IMX8MP:
+@@ -318,7 +356,8 @@ static void imx6_pcie_init_phy(struct imx6_pcie *imx6_pcie)
+ 		regmap_update_bits(imx6_pcie->iomuxc_gpr,
+ 				   imx6_pcie_grp_offset(imx6_pcie),
+ 				   IMX8MQ_GPR_PCIE_REF_USE_PAD,
+-				   IMX8MQ_GPR_PCIE_REF_USE_PAD);
++				   (imx6_pcie->internal_refclk ?
++						0 : IMX8MQ_GPR_PCIE_REF_USE_PAD));
+ 		/*
+ 		 * Regarding the datasheet, the PCIE_VPH is suggested
+ 		 * to be 1.8V. If the PCIE_VPH is supplied by 3.3V, the
+@@ -1169,7 +1208,8 @@ static int imx6_pcie_probe(struct platform_device *pdev)
+ 		imx6_pcie->pcie_aux = devm_clk_get(dev, "pcie_aux");
+ 		if (IS_ERR(imx6_pcie->pcie_aux))
+ 			return dev_err_probe(dev, PTR_ERR(imx6_pcie->pcie_aux),
+-					     "pcie_aux clock source missing or invalid\n");
++							 "pcie_aux clock source missing or invalid\n");
++		imx6_pcie->internal_refclk = of_property_read_bool(node, "internal-refclk");
+ 		fallthrough;
+ 	case IMX7D:
+ 		if (dbi_base->start == IMX8MQ_PCIE2_BASE_ADDR)
+-- 
+2.39.0
+
