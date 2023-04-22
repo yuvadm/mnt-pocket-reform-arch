@@ -1,12 +1,12 @@
-# AArch64 multi-platform
-# Maintainer: Kevin Mihelich <kevin@archlinuxarm.org>
+# MNT Pocket Reform Linux Kernel
+# Maintainer: Yuval Adam <hello@yuv.al>
 
 buildarch=8
 
-pkgbase=linux-aarch64
+pkgbase=linux-mnt-pocket-reform
 _srcname=linux-6.2
 _kernelname=${pkgbase#linux}
-_desc="AArch64 multi-platform"
+_desc="MNT Pocket Reform Linux Kernel"
 pkgver=6.2.10
 pkgrel=1
 arch=('aarch64')
@@ -16,23 +16,23 @@ makedepends=('xmlto' 'docbook-xsl' 'kmod' 'inetutils' 'bc' 'git' 'uboot-tools' '
 options=('!strip')
 source=("http://www.kernel.org/pub/linux/kernel/v6.x/${_srcname}.tar.xz"
         "http://www.kernel.org/pub/linux/kernel/v6.x/patch-${pkgver}.xz"
-        '0001-net-smsc95xx-Allow-mac-address-to-be-set-as-a-parame.patch'
-        '0002-arm64-dts-rockchip-disable-pwm0-on-rk3399-firefly.patch'
+        '0001-nwl-dsi-fixup-mode-only-for-LCDIF-input-not-DCSS.patch'
+        '0002-pci-imx6-add-support-for-internal-refclk-imx8mq.patch'
+        '0003-lcdif-fix-pcie-interference.patch'
+        '0004-mnt4002-imx-gpcv2-wake-smccc.patch.patch'
+        '0005-imx8mq-import-HDMI-driver-and-make-DCSS-compatible-w.patch'
         'config'
-        'generate_chromebook_its.sh'
-        'kernel.keyblock'
-        'kernel_data_key.vbprivk'
         'linux.preset'
         '60-linux.hook'
         '90-linux.hook')
 md5sums=('787862593d7bf354cf1a5c37e21fc147'
          'e0221ea0e6eeb147c29d2fd72e987ed5'
-         '7b08a199a97e3e2288e5c03d8e8ded2d'
-         'c9d4e392555b77034e24e9f87c5ff0b3'
+         '3dee6f248f56ff572d95e88950acb81c'
+         '43902aba1371a96a8f760ea4cf88534f'
+         '62338635905966e7b9bdf303b565dd82'
+         '9f286bf5ffd6f7d94591871b8e25275d'
+         'f8ff3aab1e95e2a74e4866f72413c16d'
          'f1379ae267804a7820963dd0527f11a8'
-         '7c97cf141750ad810235b1ad06eb9f75'
-         '61c5ff73c136ed07a7aadbf58db3d96a'
-         '584777ae88bce2c5659960151b64c7d8'
          '41cb5fef62715ead2dd109dbea8413d6'
          '0a5f16bfec6ad982a2f6782724cca8ba'
          '3dc88030a8f2f5a5f97266d99b149f77')
