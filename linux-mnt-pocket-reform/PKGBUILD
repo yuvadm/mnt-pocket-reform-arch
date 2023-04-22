@@ -49,8 +49,11 @@ prepare() {
   git apply --whitespace=nowarn ../patch-${pkgver}
 
   # ALARM patches
-  git apply ../0001-net-smsc95xx-Allow-mac-address-to-be-set-as-a-parame.patch
-  git apply ../0002-arm64-dts-rockchip-disable-pwm0-on-rk3399-firefly.patch
+  git apply ../0001-nwl-dsi-fixup-mode-only-for-LCDIF-input-not-DCSS.patch
+  git apply ../0002-pci-imx6-add-support-for-internal-refclk-imx8mq.patch
+  git apply ../0003-lcdif-fix-pcie-interference.patch
+  git apply ../0004-mnt4002-imx-gpcv2-wake-smccc.patch.patch
+  git apply ../0005-imx8mq-import-HDMI-driver-and-make-DCSS-compatible-w.patch
 
   cat "${srcdir}/config" > ./.config
 }
@@ -188,47 +191,7 @@ _package-headers() {
   ln -sr "$builddir" "$pkgdir/usr/src/$pkgbase"
 }
 
-_package-chromebook() {
-  pkgdesc="The Linux Kernel - ${_desc} - Chromebooks"
-  depends=('linux-aarch64')
-  conflicts=('linux-aarch64-rc-chromebook')
-  install=${pkgname}.install
-
-  cd ${_srcname}
-
-  mkdir -p "${pkgdir}/boot"
-
-  image=arch/arm64/boot/Image
-
-  chromeos_boards=(
-    'elm'
-    'gru'
-    'kukui'
-    'trogdor'
-    'asurada'
-  )
-  chromebook_dtbs=($(for b in ${chromeos_boards[@]}; do find arch/arm64/boot -name "*${b}*.dtb" | LC_COLLATE=C sort; done))
-
-  lz4 -20 -z -f -m ${image}
-  echo ${chromebook_dtbs[@]} | ../generate_chromebook_its.sh ${image}.lz4 arm64 lz4 > kernel.its
-
-  mkimage -D "-I dts -O dtb -p 2048" -f kernel.its vmlinux.uimg
-  dd if=/dev/zero of=bootloader.bin bs=512 count=1
-  echo "console=tty0 console=ttyS2,115200n8 earlyprintk=ttyS2,115200n8 console=ttyMSM0,115200n8 init=/sbin/init root=PARTUUID=%U/PARTNROFF=1 rootwait rw noinitrd" > cmdline
-  vbutil_kernel \
-    --pack vmlinux.kpart \
-    --version 1 \
-    --vmlinuz vmlinux.uimg \
-    --arch aarch64 \
-    --keyblock ../kernel.keyblock \
-    --signprivate ../kernel_data_key.vbprivk \
-    --config cmdline \
-    --bootloader bootloader.bin
-
-  cp vmlinux.kpart "${pkgdir}/boot"
-}
-
-pkgname=("${pkgbase}" "${pkgbase}-headers" "${pkgbase}-chromebook")
+pkgname=("${pkgbase}" "${pkgbase}-headers")
 for _p in ${pkgname[@]}; do
   eval "package_${_p}() {
     _package${_p#${pkgbase}}
